@@ -105,13 +105,6 @@ Command commands[] = {
         "open(2), read(2), write(2), lseek(2), ftruncate(2), fstat(2), close(2)",
         cmd_edit
     },
-    {
-        "edit_ext", "edicion",
-        "edit_ext [archivo]",
-        "Abre el editor como proceso hijo aislado (binario ./editor).",
-        "fork(2), execvp(3), waitpid(2)",
-        cmd_edit_ext
-    },
 
     /* --- Categoría: Utilidades --- */
     {
@@ -333,14 +326,16 @@ int main() {
      * STDIN SIN BUFERIZAR: necesario para que los procesos hijos hereden la entrada.
      * ------------------------------------------------------------------------------
      * Por defecto stdio llena un bufer de varios KB en la primera lectura. Al leer la
-     * linea "edit_ext archivo" de una tuberia, stdio se lleva TAMBIEN los comandos que
-     * venian detras, que quedan atrapados en memoria del padre. El hijo creado con
-     * fork(2) hereda el descriptor 0, pero no ese bufer: encuentra la tuberia vacia y
-     * ve EOF de inmediato.
+     * linea "p_exec head -n 1" de una tuberia, stdio se lleva TAMBIEN las lineas que
+     * venian detras, que quedan atrapadas en memoria del shell. El hijo creado con
+     * fork(2) hereda el descriptor 0, pero no ese bufer de espacio de usuario:
+     * encuentra la tuberia vacia y ve EOF de inmediato.
      *
      * Con _IONBF cada fgets consume exactamente los bytes de su linea y deja el resto
      * en la tuberia, disponible para quien lea despues. Es lo que hace posible guionar
-     * 'edit_ext' y 'p_exec' desde un script en lugar de solo a mano en la terminal.
+     * 'p_exec' desde un script en lugar de solo a mano en la terminal.
+     *
+     * Este defecto venia en el shell base y se detecto al automatizar las pruebas.
      * ------------------------------------------------------------------------------ */
     setvbuf(stdin, NULL, _IONBF, 0);
 

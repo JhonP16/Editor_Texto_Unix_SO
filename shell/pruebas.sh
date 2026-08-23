@@ -447,7 +447,7 @@ titulo "9. Integración con el shell (categoría 'edicion')"
 # ======================================================================================
 SHELL_BIN="$DIR/eafitOS"
 if [ -x "$SHELL_BIN" ]; then
-    rm -f "$TMP/t9.txt" "$TMP/t9b.txt"
+    rm -f "$TMP/t9.txt"
 
     "$SHELL_BIN" > "$TMP/salida.txt" 2>&1 <<IN
 help
@@ -461,23 +461,9 @@ IN
     sed -e 's/\x1b\[[0-9;]*m//g' "$TMP/salida.txt" > "$TMP/salida_plana.txt"
     verificar_salida "help lista la categoría nueva 'edicion'" "edicion"
     verificar_salida "help edicion muestra el comando edit" "edit "
-    verificar_salida "help edicion muestra el comando edit_ext" "edit_ext"
     verificar_salida "el shell recupera el control tras salir del editor" "Bienvenido al Shell"
     verificar_archivo "edit (en proceso) escribe correctamente en el archivo" "$TMP/t9.txt" <<'ESP'
 linea escrita desde el shell
-ESP
-
-    "$SHELL_BIN" > "$TMP/salida.txt" 2>&1 <<IN
-edit_ext $TMP/t9b.txt
-a linea escrita por el proceso hijo
-q
-exit
-IN
-    sed -e 's/\x1b\[[0-9;]*m//g' "$TMP/salida.txt" > "$TMP/salida_plana.txt"
-    verificar_salida "edit_ext lanza el editor con fork y espera con waitpid" "Editor lanzado como proceso hijo"
-    verificar_salida "edit_ext reporta el código de salida del hijo" "terminó con código 0"
-    verificar_archivo "edit_ext (proceso aislado) escribe correctamente" "$TMP/t9b.txt" <<'ESP'
-linea escrita por el proceso hijo
 ESP
 else
     echo "  ${GRIS}[OMITIDA]${FIN} el shell 'eafitOS' no está compilado; ejecute 'make'"

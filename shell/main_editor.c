@@ -15,8 +15,8 @@
  * suelto no son dos programas parecidos, son el MISMO programa con dos puntos de
  * entrada. Corregir un fallo en editor.c lo corrige en ambos a la vez.
  *
- * Este binario es además el que lanza el comando 'edit_ext' del shell mediante
- * fork(2) + execvp(3), y el que utiliza el script de pruebas pruebas.sh.
+ * Este binario es el que utiliza el script de pruebas pruebas.sh para ejercitar el
+ * editor sin depender del shell.
  */
 static void uso(const char *prog) {
     printf(COLOR_TITLE "Uso: %s [archivo]\n" COLOR_RESET, prog);

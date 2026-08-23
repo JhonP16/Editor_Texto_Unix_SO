@@ -95,8 +95,7 @@ int cmd_p_monitor(int argc, char **argv); /* Syscalls: getrusage */
  * STDIN con su propio sub-REPL. La diferencia no es de familia de syscalls sino de
  * modelo de interacción, y por eso no cabe en "datos" aunque comparta open/read/write.
  */
-int cmd_edit(int argc, char **argv);     /* Editor en proceso: open, read, write, lseek, ftruncate, fstat, close */
-int cmd_edit_ext(int argc, char **argv); /* Editor aislado:    fork, execvp, waitpid */
+int cmd_edit(int argc, char **argv); /* Syscalls: open, read, write, lseek, ftruncate, fstat, close */
 
 /* --- Categoría: Utilidades (cat_util.c) --- */
 int cmd_saludar(int argc, char **argv);   /* Syscalls: getuid */

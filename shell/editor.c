@@ -5,7 +5,6 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <sys/wait.h>
 #include <errno.h>
 #include <time.h>
 #include <pwd.h>
@@ -1279,10 +1278,6 @@ int editor_main(const char *ruta_inicial) {
     Editor ed;
     ed_init(&ed);
 
-    /* Misma razon que en el shell (ver main.c): sin bufer, el editor consume solo sus
-     * propias lineas y deja intacto lo que siga en la tuberia para el proceso padre. */
-    setvbuf(stdin, NULL, _IONBF, 0);
-
     printf(COLOR_TITLE "\n========================================================\n" COLOR_RESET);
     printf(COLOR_TITLE "   Editor de Texto CLI sobre llamadas al sistema POSIX\n" COLOR_RESET);
     printf(COLOR_INFO  "   Escriba 'h' para la ayuda, 'q' para salir.\n" COLOR_RESET);
@@ -1303,14 +1298,17 @@ int editor_main(const char *ruta_inicial) {
 
 /**
  * ====================================================================================
- * INTEGRACIÓN CON EL SHELL — ESTRATEGIA 1 (principal): EN PROCESO
+ * INTEGRACIÓN CON EL SHELL: EL EDITOR COMO COMANDO EN PROCESO
  * ====================================================================================
  * Comando del shell:  edit [archivo]     (categoría "edicion")
  *
  * El editor corre DENTRO del proceso del shell: es una simple llamada a función que
  * abre su propio sub-REPL y retorna cuando el usuario escribe 'q'.
  *
- * Por qué esta es la estrategia principal:
+ * Por qué en proceso y no como binario externo con fork(2) + execvp(3):
+ *   - El shell YA ofrece p_exec para lanzar binarios de Linux. Integrar el editor por esa
+ *     via no habria requerido ninguna decision de diseno: seria escribir "p_exec ./editor"
+ *     con otro nombre.
  *   - El contrato de la tabla de comandos del shell, int (*handler)(int, char**), no
  *     impone ninguna duración: un handler puede leer STDIN y ciclar. No hubo que
  *     modificar ni el REPL del shell ni su tokenizador para integrarlo.
@@ -1320,90 +1318,10 @@ int editor_main(const char *ruta_inicial) {
  *     pedagógica en todo el proyecto.
  *
  * Contrapartida asumida: un fallo grave del editor se llevaría por delante al shell.
- * Por eso existe la estrategia 2, y por eso cada retorno de syscall se verifica.
+ * Se mitiga verificando el valor de retorno de TODAS las llamadas al sistema, de modo
+ * que ningún camino de error deje el archivo a medio escribir ni un descriptor abierto.
  */
 int cmd_edit(int argc, char **argv) {
     const char *ruta = (argc > 1) ? argv[1] : NULL;
     return editor_main(ruta);
-}
-
-/**
- * ====================================================================================
- * INTEGRACIÓN CON EL SHELL — ESTRATEGIA 2 (alternativa): PROCESO AISLADO
- * ====================================================================================
- * Comando del shell:  edit_ext [archivo]     (categoría "edicion")
- *
- * Syscalls: fork(2), execvp(3) sobre execve(2), waitpid(2).
- *
- * Aquí el shell se bifurca y el hijo REEMPLAZA su imagen de proceso por el binario
- * './editor'. Es el mismo mecanismo que usa 'p_exec' y que usa cualquier shell real.
- *
- * Existe para poder contrastar empíricamente las dos estrategias en la sustentación:
- *
- *   En proceso (edit)          | Proceso aislado (edit_ext)
- *   ---------------------------|------------------------------------------------
- *   Sin costo de creación      | fork + exec por invocación
- *   Comparte la tabla de FDs   | Tabla de FDs propia; el shell no ve el archivo
- *   Un segfault mata el shell  | Un segfault sólo mata al hijo; el shell sobrevive
- *   Sin binario extra          | Requiere './editor' compilado y accesible
- *
- * Ambas rutas ejecutan el mismo editor_main(), así que la comparación aísla justamente
- * el mecanismo de invocación y no diferencias de funcionalidad.
- */
-int cmd_edit_ext(int argc, char **argv) {
-    char *args[3];
-    args[0] = (char *)"./editor";
-    args[1] = (argc > 1) ? argv[1] : NULL;
-    args[2] = NULL;
-
-    /* Vaciar stdout ANTES de fork(2): lo que quede en el bufer del padre se duplicaria
-     * en el hijo y se imprimiria dos veces al terminar cada proceso. */
-    fflush(stdout);
-
-    LOG_SYSCALL("fork", "");
-    fflush(stdout);
-    pid_t pid = fork();
-    if (pid == -1) {
-        LOG_SYSCALL_ERROR(strerror(errno));
-        perror("fork");
-        return 1;
-    }
-
-    if (pid == 0) {
-        /* PROCESO HIJO: se convierte en el editor */
-        execvp(args[0], args);
-
-        /* Sólo se llega aquí si execvp falló */
-        perror("execvp ./editor");
-        fprintf(stderr, COLOR_ERROR
-                "No se pudo ejecutar './editor'. Compílelo con 'make' y ejecute el shell "
-                "desde el mismo directorio.\n" COLOR_RESET);
-        _exit(127);                 /* _exit: no vaciar los búferes heredados del padre */
-    }
-
-    /* PROCESO PADRE: espera a que el editor termine */
-    LOG_SYSCALL_RESULT(pid);
-    printf(COLOR_INFO "Editor lanzado como proceso hijo (PID %d). Esperando...\n" COLOR_RESET, pid);
-
-    int estado;
-    LOG_SYSCALL("waitpid", "%d, &estado, 0", pid);
-    pid_t terminado = waitpid(pid, &estado, 0);
-    if (terminado == -1) {
-        LOG_SYSCALL_ERROR(strerror(errno));
-        perror("waitpid");
-        return 1;
-    }
-    LOG_SYSCALL_RESULT(terminado);
-
-    if (WIFEXITED(estado)) {
-        printf(COLOR_INFO "El editor (PID %d) terminó con código %d.\n" COLOR_RESET,
-               terminado, WEXITSTATUS(estado));
-        return WEXITSTATUS(estado);
-    }
-    if (WIFSIGNALED(estado)) {
-        printf(COLOR_ERROR "El editor (PID %d) fue terminado por la señal %d.\n" COLOR_RESET,
-               terminado, WTERMSIG(estado));
-        printf(COLOR_INFO "Nótese que el shell sigue vivo: ésa es la ventaja del aislamiento.\n" COLOR_RESET);
-    }
-    return 1;
 }
