@@ -22,12 +22,9 @@ nueva (`edicion`)** dentro del shell educativo de la asignatura.
 | **Makefile** con targets `all` y `clean` | `shell/Makefile` (además: `run`, `run-editor`, `test`, `asan`, `valgrind`) |
 | **Shell actualizado** integrando el editor | `shell/main.c`, `shell/shell.h` — ver [§5](#5-integración-con-el-shell) |
 | **Código de demostración / pruebas** | `shell/pruebas.sh` — 46 casos, ver [§6](#6-pruebas) |
-| **Documento de sustentación (PDF)** |  |
+| **Documento de sustentación (PDF)** | En el código fuente del respositorio, nombrado como `DocumentoSustentación_EditorTexo.pdf` |
 | **Video explicativo** |  |
 
-> **Restricción de E/S cumplida.** Todo el acceso a disco se hace exclusivamente con
-> llamadas al sistema: `open(2)`, `read(2)`, `write(2)`, `lseek(2)`, `ftruncate(2)`,
-> `fstat(2)` y `close(2)`. No se usa `fopen`/`fread`/`fwrite`/`fclose` en ningún punto.
 
 ---
 
@@ -79,6 +76,9 @@ Si no pones archivo, después se te pedirá y lo podrá poner con el comando `o`
 | Equipos de 3 | `m` — tamaño, permisos, inodo y modificación vía `fstat(2)` | Implementado |
 | Equipos de 3 | `y <n>` copiar y `x <n>` pegar, portapapeles secuencial | Implementado |
 
+> **Restricción de E/S cumplida.** Todo el acceso a disco se hace exclusivamente con
+> llamadas al sistema: `open(2)`, `read(2)`, `write(2)`, `lseek(2)`, `ftruncate(2)`,
+> `fstat(2)` y `close(2)`. No se usa `fopen`/`fread`/`fwrite`/`fclose` en ningún punto.
 
 ---
 
