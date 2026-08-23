@@ -1,2 +1,5 @@
 *.o
-sys_shell
+eafitOS
+edi
+edi_asan
+pruebas_tmp/

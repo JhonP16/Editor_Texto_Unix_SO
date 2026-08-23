@@ -1,4 +1,8 @@
+# --- Binarios y objetos del shell + editor ---
 shell/*.o
-shell/sys_shell
-Banderas_CLI/*.o
-Banderas_CLI/cli_parser
+shell/eafitOS
+shell/edi
+shell/edi_asan
+
+# --- Residuos del script de pruebas ---
+shell/pruebas_tmp/

@@ -1,6 +1,6 @@
 # Guía Didáctica: Arquitectura del Shell Educativo y Llamadas al Sistema
 
-Esta guía está diseñada para los estudiantes de la asignatura **SO2026B (Sistemas Operativos)**. Explica detalladamente la arquitectura del proyecto `sys_shell`, el flujo de ejecución del shell interactivo y los conceptos de bajo nivel asociados a cada llamada al sistema (*syscall*) utilizada.
+Esta guía está diseñada para los estudiantes de la asignatura **SO2026B (Sistemas Operativos)**. Explica detalladamente la arquitectura del proyecto `eafitOS`, el flujo de ejecución del shell interactivo y los conceptos de bajo nivel asociados a cada llamada al sistema (*syscall*) utilizada.
 
 ---
 
@@ -16,7 +16,7 @@ Es el mecanismo o interfaz que permite a un programa en el *Espacio de Usuario* 
 
 ---
 
-## 2. Arquitectura del Proyecto `sys_shell`
+## 2. Arquitectura del Proyecto `eafitOS`
 
 El proyecto se estructura de forma modular en lenguaje C:
 

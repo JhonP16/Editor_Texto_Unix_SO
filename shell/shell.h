@@ -87,6 +87,17 @@ int cmd_p_exec(int argc, char **argv);    /* Syscalls: fork, execvp, waitpid */
 int cmd_p_kill(int argc, char **argv);    /* Syscalls: kill */
 int cmd_p_monitor(int argc, char **argv); /* Syscalls: getrusage */
 
+/* --- Categoría: Edición de Texto (editor.c) ---
+ * Categoría NUEVA creada para este proyecto. Justificación en el PDF de sustentación:
+ * las cuatro categorías originales agrupan comandos de un solo disparo y sin estado
+ * (ejecutan, imprimen y retornan). El editor rompe ese modelo porque mantiene un
+ * descriptor abierto entre comandos, conserva estado (portapapeles) y se apropia de
+ * STDIN con su propio sub-REPL. La diferencia no es de familia de syscalls sino de
+ * modelo de interacción, y por eso no cabe en "datos" aunque comparta open/read/write.
+ */
+int cmd_edit(int argc, char **argv);     /* Editor en proceso: open, read, write, lseek, ftruncate, fstat, close */
+int cmd_edit_ext(int argc, char **argv); /* Editor aislado:    fork, execvp, waitpid */
+
 /* --- Categoría: Utilidades (cat_util.c) --- */
 int cmd_saludar(int argc, char **argv);   /* Syscalls: getuid */
 int cmd_despedir(int argc, char **argv);  /* Syscalls: getuid */

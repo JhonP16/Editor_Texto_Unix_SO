@@ -56,25 +56,49 @@ Comandos útiles para ver la hora, la fecha y saludar al usuario actual.
 * `fecha`: Muestra la fecha del sistema en formato YYYY-MM-DD.
   * *Syscalls*: `time(2)`
 
+### 5. Categoría: Edición de Texto (`edicion`)
+
+Editor de texto interactivo estilo `ed` construido sobre llamadas al sistema POSIX.
+Es una categoría **nueva**, creada para este proyecto: a diferencia de los demás comandos
+del shell —que ejecutan, imprimen y retornan— el editor mantiene un descriptor abierto,
+conserva estado en memoria y abre su propio sub-REPL.
+
+* `edit [archivo]`: Abre el editor **dentro del proceso del shell** (estrategia principal).
+  * *Syscalls*: `open(2)`, `read(2)`, `write(2)`, `lseek(2)`, `ftruncate(2)`, `fstat(2)`, `close(2)`
+* `edit_ext [archivo]`: Abre el editor como **proceso hijo aislado**, ejecutando `./edi`.
+  * *Syscalls*: `fork(2)`, `execvp(3)`, `waitpid(2)`
+
+Comandos del editor: `o` abrir, `p` imprimir, `a` añadir, `d` borrar, `i` insertar,
+`s` buscar, `m` metadatos, `y` copiar, `x` pegar, `q` salir.
+
+Documentación completa, decisiones de arquitectura y batería de pruebas:
+**[`shell/EDITOR.md`](shell/EDITOR.md)**.
+
 ---
 
 ## Compilación y Ejecución
 
 Para compilar el proyecto es necesario estar en un entorno Linux con GCC y Make instalados.
 
-1. **Compilar el proyecto:**
+1. **Compilar el proyecto** (desde el directorio `shell/`):
 
    ```bash
    make
    ```
 
-   Esto producirá el binario ejecutable `sys_shell`.
+   Produce dos binarios: `eafitOS` (el shell) y `edi` (el editor independiente).
 2. **Iniciar el shell interactivo:**
 
    ```bash
-   ./sys_shell
+   ./eafitOS       # o bien: make run
    ```
-3. **Limpiar archivos objeto y binarios:**
+3. **Ejecutar la batería de pruebas del editor:**
+
+   ```bash
+   make test       # 50 casos
+   make asan       # los mismos casos bajo AddressSanitizer/UBSan/LeakSanitizer
+   ```
+4. **Limpiar archivos objeto y binarios:**
 
    ```bash
    make clean
@@ -84,16 +108,16 @@ Para compilar el proyecto es necesario estar en un entorno Linux con GCC y Make 
 
 ## Ejemplo de Uso Educativo
 
-Cuando ejecutas un comando en `sys_shell`, verás las syscalls ejecutadas en color **magenta** en la terminal:
+Cuando ejecutas un comando en `eafitOS`, verás las syscalls ejecutadas en color **magenta** en la terminal:
 
 ```ansi
-sys-shell> d_create mi_archivo.txt "Hola SO"
+eafitOS> d_create mi_archivo.txt "Hola SO"
 [syscall] open("mi_archivo.txt", O_WRONLY|O_CREAT|O_TRUNC, 0644) ... = 3
 [syscall] write(3, "Hola SO", 7) ... = 7
 [syscall] close(3) ... = 0
 Archivo 'mi_archivo.txt' creado exitosamente con 7 bytes.
 
-sys-shell> d_info mi_archivo.txt
+eafitOS> d_info mi_archivo.txt
 [syscall] stat("mi_archivo.txt", &st) ... = 0
 --- Metadatos del Archivo (stat) ---
   Inodo:          456789
@@ -110,5 +134,5 @@ sys-shell> d_info mi_archivo.txt
 El shell cuenta con una sección de ayuda dinámica muy completa. Puedes escribir:
 
 * `help`: Muestra la bienvenida y el listado de categorías.
-* `help <categoria>`: Muestra todos los comandos pertenecientes a `datos`, `memoria`, `monitoreo` o `utilidades`.
+* `help <categoria>`: Muestra todos los comandos de una categoría (`datos`, `memoria`, `monitoreo`, `edicion` o `utilidades`). La lista de categorías se deriva automáticamente de la tabla de comandos.
 * `help <comando>`: Explica individualmente qué hace un comando, cómo se usa y qué llamadas al sistema específicas invoca.

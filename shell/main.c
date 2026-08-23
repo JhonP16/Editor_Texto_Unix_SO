@@ -97,6 +97,22 @@ Command commands[] = {
         cmd_p_monitor
     },
 
+    /* --- Categoría: Edición (NUEVA: ver justificación en shell.h) --- */
+    {
+        "edit", "edicion",
+        "edit [archivo]",
+        "Abre el editor de texto CLI dentro de este mismo proceso.",
+        "open(2), read(2), write(2), lseek(2), ftruncate(2), fstat(2), close(2)",
+        cmd_edit
+    },
+    {
+        "edit_ext", "edicion",
+        "edit_ext [archivo]",
+        "Abre el editor como proceso hijo aislado (binario ./edi).",
+        "fork(2), execvp(3), waitpid(2)",
+        cmd_edit_ext
+    },
+
     /* --- Categoría: Utilidades --- */
     {
         "saludar", "utilidades",
@@ -130,6 +146,67 @@ Command commands[] = {
 
 /* Número total de comandos en el shell */
 const int num_commands = sizeof(commands) / sizeof(commands[0]);
+
+/**
+ * ====================================================================================
+ * CATEGORÍAS DERIVADAS DE LA TABLA (refactor)
+ * ====================================================================================
+ * Antes, print_help() traía las cuatro categorías escritas a mano en una cadena de
+ * strcmp. Eso convertía a la ayuda en el único punto del shell que NO se alimentaba de
+ * la tabla de comandos: añadir una categoría obligaba a editar el enrutador.
+ *
+ * Ahora la existencia de una categoría se deduce recorriendo commands[]. Registrar un
+ * comando con una categoría nueva basta para que 'help <categoria>' funcione sola.
+ * La tabla de abajo es puramente cosmética: sólo aporta el texto descriptivo.
+ */
+typedef struct {
+    const char *nombre;
+    const char *descripcion;
+} Categoria;
+
+static const Categoria descripciones_categoria[] = {
+    {"datos",      "Comandos de archivos y datos (open, read, write, stat, ...)"},
+    {"memoria",    "Comandos de control de heap y memoria (sbrk, mmap, ...)"},
+    {"monitoreo",  "Comandos de procesos, señales y recursos (fork, exec, kill, getrusage)"},
+    {"edicion",    "Editor de texto CLI sobre syscalls (open, lseek, ftruncate, fstat)"},
+    {"utilidades", "Comandos útiles del sistema (saludar, hora, fecha, despedir)"}
+};
+static const int num_descripciones =
+    sizeof(descripciones_categoria) / sizeof(descripciones_categoria[0]);
+
+/* Indica si 'nombre' es una categoría, consultando la propia tabla de comandos. */
+static int es_categoria(const char *nombre) {
+    for (int i = 0; i < num_commands; i++) {
+        if (strcmp(commands[i].category, nombre) == 0) return 1;
+    }
+    return 0;
+}
+
+/* Texto descriptivo de una categoría; cadena vacía si no se registró ninguno. */
+static const char *descripcion_categoria(const char *nombre) {
+    for (int i = 0; i < num_descripciones; i++) {
+        if (strcmp(descripciones_categoria[i].nombre, nombre) == 0) {
+            return descripciones_categoria[i].descripcion;
+        }
+    }
+    return "";
+}
+
+/* Lista las categorías presentes en commands[], sin repetirlas. */
+static void listar_categorias(void) {
+    for (int i = 0; i < num_commands; i++) {
+        int ya_listada = 0;
+        for (int j = 0; j < i; j++) {
+            if (strcmp(commands[i].category, commands[j].category) == 0) {
+                ya_listada = 1;
+                break;
+            }
+        }
+        if (ya_listada) continue;
+        printf("  " COLOR_CATEGORY "%-11s" COLOR_RESET " - %s\n",
+               commands[i].category, descripcion_categoria(commands[i].category));
+    }
+}
 
 /**
  * ====================================================================================
@@ -202,10 +279,8 @@ void print_help(const char *arg) {
         printf("Este shell te permite explorar cómo funcionan las llamadas al sistema en Linux.\n");
         printf("Los comandos están clasificados en categorías.\n\n");
         printf("Categorías disponibles:\n");
-        printf("  " COLOR_CATEGORY "datos" COLOR_RESET "      - Comandos de archivos y datos (open, read, write, stat, ...)\n");
-        printf("  " COLOR_CATEGORY "memoria" COLOR_RESET "    - Comandos de control de heap y memoria (sbrk, mmap, ...)\n");
-        printf("  " COLOR_CATEGORY "monitoreo" COLOR_RESET "  - Comandos de procesos, señales y recursos (fork, exec, kill, getrusage)\n");
-        printf("  " COLOR_CATEGORY "utilidades" COLOR_RESET " - Comandos útiles del sistema (saludar, hora, fecha, despedir)\n\n");
+        listar_categorias();   /* Derivadas de la tabla commands[], no escritas a mano */
+        printf("\n");
         printf("Uso general:\n");
         printf("  " COLOR_PROMPT "help <categoria>" COLOR_RESET "  - Muestra comandos específicos de una categoría.\n");
         printf("  " COLOR_PROMPT "help <comando>" COLOR_RESET "    - Explica el uso y las syscalls de un comando específico.\n");
@@ -215,8 +290,7 @@ void print_help(const char *arg) {
     }
 
     /* Caso 2: El usuario escribió 'help <categoria>': Mostrar comandos del grupo */
-    if (strcmp(arg, "datos") == 0 || strcmp(arg, "memoria") == 0 || 
-        strcmp(arg, "monitoreo") == 0 || strcmp(arg, "utilidades") == 0) {
+    if (es_categoria(arg)) {
         printf(COLOR_TITLE "\n--- Categoría: %s ---\n" COLOR_RESET, arg);
         for (int i = 0; i < num_commands; i++) {
             if (strcmp(commands[i].category, arg) == 0) {
@@ -254,6 +328,21 @@ void print_help(const char *arg) {
 int main() {
     char line[MAX_LINE];
     char *argv[MAX_ARGS];
+
+    /* ------------------------------------------------------------------------------
+     * STDIN SIN BUFERIZAR: necesario para que los procesos hijos hereden la entrada.
+     * ------------------------------------------------------------------------------
+     * Por defecto stdio llena un bufer de varios KB en la primera lectura. Al leer la
+     * linea "edit_ext archivo" de una tuberia, stdio se lleva TAMBIEN los comandos que
+     * venian detras, que quedan atrapados en memoria del padre. El hijo creado con
+     * fork(2) hereda el descriptor 0, pero no ese bufer: encuentra la tuberia vacia y
+     * ve EOF de inmediato.
+     *
+     * Con _IONBF cada fgets consume exactamente los bytes de su linea y deja el resto
+     * en la tuberia, disponible para quien lea despues. Es lo que hace posible guionar
+     * 'edit_ext' y 'p_exec' desde un script en lugar de solo a mano en la terminal.
+     * ------------------------------------------------------------------------------ */
+    setvbuf(stdin, NULL, _IONBF, 0);
 
     /* Banner de bienvenida premium */
     printf(COLOR_TITLE "========================================================\n" COLOR_RESET);
