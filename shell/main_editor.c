@@ -6,7 +6,7 @@
 
 /**
  * ====================================================================================
- * BINARIO INDEPENDIENTE DEL EDITOR:  ./edi [archivo]
+ * BINARIO INDEPENDIENTE DEL EDITOR:  ./editor [archivo]
  * ====================================================================================
  * Este archivo contiene ÚNICAMENTE el main() y el manejo de argumentos. Toda la lógica
  * vive en editor.c, que se compila también dentro del shell.

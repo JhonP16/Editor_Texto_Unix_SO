@@ -1,8 +1,8 @@
 # --- Binarios y objetos del shell + editor ---
 shell/*.o
 shell/eafitOS
-shell/edi
-shell/edi_asan
+shell/editor
+shell/editor_asan
 
 # --- Residuos del script de pruebas ---
 shell/pruebas_tmp/

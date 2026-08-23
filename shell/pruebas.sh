@@ -2,7 +2,7 @@
 # ======================================================================================
 #  pruebas.sh - Script de demostración y validación del editor de texto CLI
 # ======================================================================================
-#  Ejecuta el binario ./edi alimentándolo por STDIN con guiones de comandos, y compara
+#  Ejecuta el binario ./editor alimentándolo por STDIN con guiones de comandos, y compara
 #  byte a byte el archivo resultante contra el contenido esperado. Cubre el camino feliz
 #  de los 9 comandos y una batería de casos borde.
 #
@@ -14,8 +14,9 @@
 set -u
 
 DIR="$(cd "$(dirname "$0")" && pwd)"
-# El binario a probar puede sobrescribirse (lo usa el target "make asan")
-EDI="${EDI:-$DIR/edi}"
+# El binario a probar puede sobrescribirse por entorno (lo usa el target "make asan").
+# Se llama EDITOR_BIN y no EDITOR porque esta ultima ya es una variable estandar de Unix.
+EDITOR_BIN="${EDITOR_BIN:-$DIR/editor}"
 TMP="$DIR/pruebas_tmp"
 
 VERDE=$'\033[1;32m'; ROJO=$'\033[1;31m'; AZUL=$'\033[1;36m'
@@ -24,8 +25,8 @@ GRIS=$'\033[0;90m';  NEGRITA=$'\033[1;97m'; FIN=$'\033[0m'
 PASADAS=0
 FALLADAS=0
 
-if [ ! -x "$EDI" ]; then
-    echo "${ROJO}No existe el binario '$EDI'. Ejecute 'make' primero.${FIN}"
+if [ ! -x "$EDITOR_BIN" ]; then
+    echo "${ROJO}No existe el binario '$EDITOR_BIN'. Ejecute 'make' primero.${FIN}"
     exit 1
 fi
 
@@ -45,7 +46,7 @@ if [ "$(stat -c '%a' "$TMP/.prueba_permisos" 2>/dev/null)" != "644" ]; then
     echo "${GRIS}Aviso: '$TMP' no conserva permisos POSIX (montaje tipo DrvFs de WSL).${FIN}"
     echo "${GRIS}       Las pruebas se ejecutaran en /tmp para poder validar el modo 0644.${FIN}"
     rm -rf "$TMP"
-    TMP="$(mktemp -d /tmp/edi_pruebas.XXXXXX)"
+    TMP="$(mktemp -d /tmp/editor_pruebas.XXXXXX)"
 else
     rm -f "$TMP/.prueba_permisos"
 fi
@@ -57,9 +58,9 @@ fi
 correr() {
     if [ "${VALGRIND:-0}" = "1" ]; then
         valgrind --leak-check=full --error-exitcode=99 --log-file="$TMP/valgrind.log" \
-                 "$EDI" "$1" > "$TMP/salida.txt" 2>&1
+                 "$EDITOR_BIN" "$1" > "$TMP/salida.txt" 2>&1
     else
-        "$EDI" "$1" > "$TMP/salida.txt" 2>&1
+        "$EDITOR_BIN" "$1" > "$TMP/salida.txt" 2>&1
     fi
     # Copia sin códigos de color: los patrones de búsqueda se aplican sobre ella
     sed -e 's/\x1b\[[0-9;]*m//g' "$TMP/salida.txt" > "$TMP/salida_plana.txt"
@@ -115,7 +116,7 @@ verificar_ausencia() {
 titulo() { echo; echo "${NEGRITA}== $1 ==${FIN}"; }
 
 echo "${AZUL}========================================================${FIN}"
-echo "${AZUL}  Pruebas del Editor de Texto CLI  (binario: ./edi)${FIN}"
+echo "${AZUL}  Pruebas del Editor de Texto CLI  (binario: ./editor)${FIN}"
 if [ "${VALGRIND:-0}" = "1" ]; then
     echo "${GRIS}  Modo valgrind ACTIVADO${FIN}"
 fi
@@ -369,7 +370,7 @@ dos
 ESP
 
 # Comandos que exigen archivo abierto, sin haber abierto ninguno
-"$EDI" > "$TMP/salida.txt" 2>&1 <<'IN'
+"$EDITOR_BIN" > "$TMP/salida.txt" 2>&1 <<'IN'
 p
 a algo
 m

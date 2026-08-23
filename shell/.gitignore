@@ -1,5 +1,5 @@
 *.o
 eafitOS
-edi
-edi_asan
+editor
+editor_asan
 pruebas_tmp/

@@ -49,7 +49,7 @@
 
 /**
  * Unico punto de entrada del editor. Lo usan por igual el comando 'edit' del shell
- * (definido en editor.c) y el binario independiente 'edi' (edi_main.c).
+ * (definido en editor.c) y el binario independiente 'editor' (main_editor.c).
  *
  * Todo lo demas -- las estructuras Editor y Portapapeles, los comandos y las rutinas de
  * recorrido -- es interno a editor.c y esta declarado 'static' alli: nada fuera del

@@ -14,9 +14,9 @@ interviene para leer los comandos del usuario (`fgets`) e imprimir mensajes de c
 ## 1. Compilación y ejecución
 
 ```bash
-make            # compila los dos binarios: eafitOS (shell) y edi (editor)
+make            # compila los dos binarios: eafitOS (shell) y editor (el editor independiente)
 make run        # lanza el shell interactivo
-make run-edi    # lanza el editor independiente
+make run-editor    # lanza el editor independiente
 make test       # ejecuta la batería de pruebas (50 casos)
 make asan       # ejecuta las pruebas bajo AddressSanitizer + UBSan + LeakSanitizer
 make valgrind   # ejecuta las pruebas bajo valgrind (requiere tenerlo instalado)
@@ -35,7 +35,7 @@ make clean      # borra binarios, objetos y residuos de pruebas
 eafitOS> edit notas.txt
 
 # 2. Como binario independiente
-./edi notas.txt
+./editor notas.txt
 
 # 3. Integrado pero aislado en un proceso hijo (fork + execvp)
 eafitOS> edit_ext notas.txt
@@ -143,11 +143,11 @@ descriptivo, y si falta, la categoría se sigue listando.
 | Costo de arranque | Nulo | Un `fork` + un `exec` por invocación |
 | Tabla de descriptores | La del shell (visible con `m_info`) | Propia; el shell no ve el archivo |
 | Fallo grave del editor | Se lleva por delante el shell | Sólo muere el hijo; el shell sobrevive |
-| Requisitos | Ninguno | El binario `./edi` compilado y accesible |
+| Requisitos | Ninguno | El binario `./editor` compilado y accesible |
 
 **`edit` es la estrategia principal.** El shell ya ofrece `p_exec` para lanzar binarios
 externos: integrar el editor por esa vía no habría requerido ninguna decisión de diseño
-—habría sido escribir `p_exec ./edi` con otro nombre— y habría desperdiciado la
+—habría sido escribir `p_exec ./editor` con otro nombre— y habría desperdiciado la
 oportunidad de que el editor comparta la tabla de descriptores del shell, algo que se
 puede comprobar en vivo ejecutando `m_info` antes y después de abrir un archivo.
 
@@ -287,8 +287,8 @@ veces.
 
 ### 3.11. Un solo editor, dos puntos de entrada
 
-`editor.c` se compila **tanto** dentro del shell **como** dentro del binario `edi`;
-`edi_main.c` contiene únicamente el `main()` y el manejo de argumentos. El editor integrado
+`editor.c` se compila **tanto** dentro del shell **como** dentro del binario `editor`;
+`main_editor.c` contiene únicamente el `main()` y el manejo de argumentos. El editor integrado
 y el binario suelto no son dos programas parecidos: son el mismo programa. Corregir un
 fallo en `editor.c` lo corrige en ambos a la vez, y es lo que permite que `edit_ext`
 compare mecanismos de invocación sin comparar funcionalidades distintas.
@@ -301,7 +301,7 @@ Toda llamada al sistema verifica su valor de retorno. Los fallos se reportan por
 con `perror(3)`, que añade la descripción textual de `errno`:
 
 ```
-edi[notas.txt]> o /raiz/prohibido.txt
+editor[notas.txt]> o /raiz/prohibido.txt
 open: Permission denied
 ```
 
@@ -325,7 +325,7 @@ make test    # 50 casos
 make asan    # los mismos casos con AddressSanitizer + UBSan + LeakSanitizer
 ```
 
-`pruebas.sh` alimenta el binario `./edi` por STDIN con guiones de comandos y compara
+`pruebas.sh` alimenta el binario `./editor` por STDIN con guiones de comandos y compara
 **byte a byte** el archivo resultante contra el contenido esperado. Cubre:
 
 | Bloque | Qué valida |
@@ -357,11 +357,11 @@ Casos borde que merecen mención especial:
 |---|---|
 | `editor.h` | Interfaz del módulo: las decisiones de diseño y `editor_main()`, lo único que se usa desde fuera |
 | `editor.c` | Todo el editor: estructuras, recorrido, comandos, sub-REPL e integración. El resto de funciones son `static` |
-| `edi_main.c` | Sólo el `main()` del binario independiente `edi` |
+| `main_editor.c` | Sólo el `main()` del binario independiente `editor` |
 | `shell.h` | Cabecera del shell + prototipos de la categoría `edicion` |
 | `main.c` | Tabla de comandos, `help` derivado de la tabla, REPL del shell |
 | `pruebas.sh` | Batería de 50 pruebas automatizadas |
-| `Makefile` | Targets `all`, `run`, `run-edi`, `test`, `asan`, `valgrind`, `clean` |
+| `Makefile` | Targets `all`, `run`, `run-editor`, `test`, `asan`, `valgrind`, `clean` |
 
 ---
 

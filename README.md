@@ -65,7 +65,7 @@ conserva estado en memoria y abre su propio sub-REPL.
 
 * `edit [archivo]`: Abre el editor **dentro del proceso del shell** (estrategia principal).
   * *Syscalls*: `open(2)`, `read(2)`, `write(2)`, `lseek(2)`, `ftruncate(2)`, `fstat(2)`, `close(2)`
-* `edit_ext [archivo]`: Abre el editor como **proceso hijo aislado**, ejecutando `./edi`.
+* `edit_ext [archivo]`: Abre el editor como **proceso hijo aislado**, ejecutando `./editor`.
   * *Syscalls*: `fork(2)`, `execvp(3)`, `waitpid(2)`
 
 Comandos del editor: `o` abrir, `p` imprimir, `a` añadir, `d` borrar, `i` insertar,
@@ -86,7 +86,7 @@ Para compilar el proyecto es necesario estar en un entorno Linux con GCC y Make 
    make
    ```
 
-   Produce dos binarios: `eafitOS` (el shell) y `edi` (el editor independiente).
+   Produce dos binarios: `eafitOS` (el shell) y `editor` (el editor independiente).
 2. **Iniciar el shell interactivo:**
 
    ```bash

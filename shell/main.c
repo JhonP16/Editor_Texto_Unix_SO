@@ -108,7 +108,7 @@ Command commands[] = {
     {
         "edit_ext", "edicion",
         "edit_ext [archivo]",
-        "Abre el editor como proceso hijo aislado (binario ./edi).",
+        "Abre el editor como proceso hijo aislado (binario ./editor).",
         "fork(2), execvp(3), waitpid(2)",
         cmd_edit_ext
     },

@@ -1170,7 +1170,7 @@ static int ed_tomar_numero(char **resto, long *valor) {
  * BUCLE INTERACTIVO DEL EDITOR (sub-REPL)
  * ====================================================================================
  * Este bucle se ejecuta DENTRO del proceso del shell cuando el editor se invoca como
- * comando integrado, y como bucle principal cuando se ejecuta el binario 'edi'.
+ * comando integrado, y como bucle principal cuando se ejecuta el binario 'editor'.
  * En ambos casos el código es exactamente el mismo.
  *
  * Retorna 0 al salir con 'q' o con EOF (Ctrl+D).
@@ -1179,7 +1179,7 @@ static int ed_repl(Editor *ed) {
     char linea[ED_LINEA_MAX];
 
     while (1) {
-        printf(COLOR_PROMPT "edi[%s]> " COLOR_RESET,
+        printf(COLOR_PROMPT "editor[%s]> " COLOR_RESET,
                ed->abierto ? ed->ruta : "sin archivo");
         fflush(stdout);
 
@@ -1270,7 +1270,7 @@ static int ed_repl(Editor *ed) {
 
 /**
  * Punto de entrada único del editor. Lo usan por igual el comando integrado del shell
- * y el binario independiente 'edi', de modo que ambos ejecutan EXACTAMENTE el mismo
+ * y el binario independiente 'editor', de modo que ambos ejecutan EXACTAMENTE el mismo
  * código: no hay dos versiones del editor que puedan divergir.
  *
  * 'ruta_inicial' puede ser NULL (arrancar sin archivo abierto).
@@ -1336,7 +1336,7 @@ int cmd_edit(int argc, char **argv) {
  * Syscalls: fork(2), execvp(3) sobre execve(2), waitpid(2).
  *
  * Aquí el shell se bifurca y el hijo REEMPLAZA su imagen de proceso por el binario
- * './edi'. Es el mismo mecanismo que usa 'p_exec' y que usa cualquier shell real.
+ * './editor'. Es el mismo mecanismo que usa 'p_exec' y que usa cualquier shell real.
  *
  * Existe para poder contrastar empíricamente las dos estrategias en la sustentación:
  *
@@ -1345,14 +1345,14 @@ int cmd_edit(int argc, char **argv) {
  *   Sin costo de creación      | fork + exec por invocación
  *   Comparte la tabla de FDs   | Tabla de FDs propia; el shell no ve el archivo
  *   Un segfault mata el shell  | Un segfault sólo mata al hijo; el shell sobrevive
- *   Sin binario extra          | Requiere './edi' compilado y accesible
+ *   Sin binario extra          | Requiere './editor' compilado y accesible
  *
  * Ambas rutas ejecutan el mismo editor_main(), así que la comparación aísla justamente
  * el mecanismo de invocación y no diferencias de funcionalidad.
  */
 int cmd_edit_ext(int argc, char **argv) {
     char *args[3];
-    args[0] = (char *)"./edi";
+    args[0] = (char *)"./editor";
     args[1] = (argc > 1) ? argv[1] : NULL;
     args[2] = NULL;
 
@@ -1374,9 +1374,9 @@ int cmd_edit_ext(int argc, char **argv) {
         execvp(args[0], args);
 
         /* Sólo se llega aquí si execvp falló */
-        perror("execvp ./edi");
+        perror("execvp ./editor");
         fprintf(stderr, COLOR_ERROR
-                "No se pudo ejecutar './edi'. Compílelo con 'make' y ejecute el shell "
+                "No se pudo ejecutar './editor'. Compílelo con 'make' y ejecute el shell "
                 "desde el mismo directorio.\n" COLOR_RESET);
         _exit(127);                 /* _exit: no vaciar los búferes heredados del padre */
     }
